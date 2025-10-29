@@ -1,11 +1,11 @@
 #include <stdio.h>
-#include <stdlib.h>
+#include <stdlib.h> 
 #include <string.h>
 #include <math.h>
 
 typedef struct {
     char codigo[12];
-    char cnpj[20];
+    char cnpj[20]; 
     int peso;
     int ordem_cadastro;
 } Container;
@@ -52,11 +52,18 @@ void mergeSort(Inspecao* arr, Inspecao* temp, int esq, int dir) {
     merge(arr, temp, esq, meio, dir);
 }
 
-int main() {
+int main(int argc, char* argv[]) {
+
+    if (argc < 2) {
+        fprintf(stderr, "Uso: %s <arquivo_de_saida.txt>\n", argv[0]);
+        return EXIT_FAILURE;
+    }
+    const char* output_file_name = argv[1];
+
     int n;
     scanf("%d", &n);
     Container *registrados = malloc(n * sizeof(Container));
-    if (registrados == NULL) return 1;
+    if (registrados == NULL) return EXIT_FAILURE;
 
     for (int i = 0; i < n; i++) {
         scanf("%s %s %d", registrados[i].codigo, registrados[i].cnpj, &registrados[i].peso);
@@ -68,7 +75,7 @@ int main() {
     Inspecao *para_inspecionar = malloc(m * sizeof(Inspecao));
     if (para_inspecionar == NULL) {
         free(registrados);
-        return 1;
+        return EXIT_FAILURE;
     }
 
     int contador_inspecao = 0;
@@ -112,23 +119,36 @@ int main() {
         fprintf(stderr, "Erro de alocação de memória para o array temp.\n");
         free(registrados);
         free(para_inspecionar);
-        return 1;
+        return EXIT_FAILURE;
     }
 
     mergeSort(para_inspecionar, temp, 0, contador_inspecao - 1);
 
+    FILE* out_f = fopen(output_file_name, "w");
+    if (out_f == NULL) {
+        perror("Nao foi possivel abrir o arquivo de saida");
+        free(registrados);
+        free(para_inspecionar);
+        free(temp);
+        return EXIT_FAILURE;
+    }
+
     for (int i = 0; i < contador_inspecao; i++) {
         Inspecao item = para_inspecionar[i];
         if (item.tipo_divergencia == 1)
-            printf("%s:%s<->%s\n", item.codigo, item.cnpj_registrado, item.cnpj_selecionado);
+            fprintf(out_f, "%s:%s<->%s\n", item.codigo, item.cnpj_registrado, item.cnpj_selecionado);
         else {
             int diff_kg = abs(item.peso_selecionado - item.peso_registrado);
-            printf("%s:%dkg(%.0f%%)\n", item.codigo, diff_kg, item.diff_percentual);
+            fprintf(out_f, "%s:%dkg(%.0f%%)\n", item.codigo, diff_kg, item.diff_percentual);
         }
     }
+
+    fclose(out_f);
+    printf("Relatorio de inspecao salvo em: %s\n", output_file_name);
 
     free(registrados);
     free(para_inspecionar);
     free(temp);
-    return 0;
+    
+    return EXIT_SUCCESS;
 }
